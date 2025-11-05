@@ -4,6 +4,8 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildVST3">
   <MAINGROUP id="dopCzv" name="Plugin_VST3">
     <GROUP id="{75C8F71A-E935-E0D5-5DA2-A95A5F6D5F54}" name="Source">
+      <FILE id="eBXZgD" name="AzureTTs.cpp" compile="1" resource="0" file="Source/tts/AzureTTs.cpp"/>
+      <FILE id="UG4NHd" name="AzureTTs.h" compile="0" resource="0" file="Source/tts/AzureTTs.h"/>
       <FILE id="FLq1B9" name="Pipeline.cpp" compile="1" resource="0" file="Source/engine/Pipeline.cpp"/>
       <FILE id="yGmThk" name="Pipeline.h" compile="0" resource="0" file="Source/engine/Pipeline.h"/>
       <FILE id="KAsjn9" name="BeepTts.h" compile="0" resource="0" file="Source/tts/BeepTts.h"/>

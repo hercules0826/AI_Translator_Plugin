@@ -17,7 +17,7 @@ LiveTranslatorAudioProcessorEditor::LiveTranslatorAudioProcessorEditor (LiveTran
 : AudioProcessorEditor (&p), proc (p)
 {
     setResizable(true, true);
-    setSize(680, 420);
+    setSize(740, 460);
 
     // Language selectors
     addAndMakeVisible(inLang);
@@ -44,7 +44,7 @@ LiveTranslatorAudioProcessorEditor::LiveTranslatorAudioProcessorEditor (LiveTran
     transcript.setMultiLine(true);
     transcript.setScrollbarsShown(true);
     transcript.setReadOnly(true);
-    transcript.setFont(juce::Font(16.0f));
+    transcript.setFont(Font(16.0f));
 
     // Debug panel
     addAndMakeVisible(showDebug);
@@ -54,8 +54,27 @@ LiveTranslatorAudioProcessorEditor::LiveTranslatorAudioProcessorEditor (LiveTran
     debug.setMultiLine(true);
     debug.setScrollbarsShown(true);
     debug.setReadOnly(true);
-    debug.setFont(juce::Font(12.0f));
+    debug.setFont(Font(12.0f));
     debug.setText(""); // hidden by layout until toggled
+
+    // New: Gender/Style + Preview
+    addAndMakeVisible(genderBox);
+    genderBox.addItem("Male", 1);
+    genderBox.addItem("Female", 2);
+    genderBox.addItem("Neutral", 3);
+    genderBox.setSelectedId(2);
+    genderBox.onChange = [this] { proc.setVoiceGender(genderBox.getText()); };
+
+    addAndMakeVisible(styleBox);
+    styleBox.addItem("Conversational", 1);
+    styleBox.addItem("Broadcast", 2);
+    styleBox.addItem("Elegant", 3);
+    styleBox.addItem("Warm", 4);
+    styleBox.setSelectedId(1);
+    styleBox.onChange = [this] { proc.setVoiceStyle(styleBox.getText()); };
+
+    addAndMakeVisible(preview);
+    preview.onClick = [this] { proc.previewVoice(); };
 
     startTimerHz(20); // 50 ms UI refresh
     updateLanguagesFromUI();
@@ -110,6 +129,15 @@ void LiveTranslatorAudioProcessorEditor::resized()
 
     r.removeFromTop(6);
     autoDetect.setBounds(r.removeFromTop(24));
+
+    r.removeFromTop(6);
+    // Voice row
+    auto voiceRow = r.removeFromTop(28);
+    genderBox.setBounds(voiceRow.removeFromLeft(140).reduced(0, 2));
+    voiceRow.removeFromLeft(8);
+    styleBox.setBounds(voiceRow.removeFromLeft(160).reduced(0, 2));
+    voiceRow.removeFromLeft(8);
+    preview.setBounds(voiceRow.removeFromLeft(120));
 
     r.removeFromTop(6);
     showDebug.setBounds(r.removeFromTop(24));

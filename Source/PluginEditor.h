@@ -18,8 +18,11 @@ private:
     LiveTranslatorAudioProcessor& proc;
 
     juce::ComboBox inLang, outLang;
+    juce::ComboBox genderBox;
+    juce::ComboBox styleBox;
+    juce::TextButton preview { "Preview" };
     juce::ToggleButton autoDetect{ "Auto-detect input language" };
-    juce::Label status{ {}, "Listening…" };
+    juce::Label status{ {}, "Listeningï¿½" };
     juce::TextEditor transcript;
     //juce::ToggleButton silenceIfSame { "Silence if same language" };
     juce::ToggleButton showDebug{ "Show debug panel" };
