@@ -1,8 +1,8 @@
 #include "Pipeline.h"
 #include <cmath>
 
-Pipeline::Pipeline(LockFreeRingBuffer& in, LockFreeRingBuffer& out)
-: juce::Thread("Pipeline"), input(in), ttsOut(out)
+Pipeline::Pipeline(LockFreeRingBuffer& in, LockFreeRingBuffer& out, WhisperEngine& we)
+: juce::Thread("Pipeline"), input(in), ttsOut(out), whisper(we)
 {
     whisper.setCallback([this](const juce::String& text, const juce::String& lang){
         lastTranscript = text;

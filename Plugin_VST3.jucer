@@ -4,8 +4,15 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildVST3">
   <MAINGROUP id="dopCzv" name="Plugin_VST3">
     <GROUP id="{75C8F71A-E935-E0D5-5DA2-A95A5F6D5F54}" name="Source">
-      <FILE id="I1Lz1E" name="Pipeline.cpp" compile="1" resource="0" file="Source/engine/Pipeline.cpp"/>
-      <FILE id="kRIpZ9" name="Pipeline.h" compile="0" resource="0" file="Source/engine/Pipeline.h"/>
+      <FILE id="FLq1B9" name="Pipeline.cpp" compile="1" resource="0" file="Source/engine/Pipeline.cpp"/>
+      <FILE id="yGmThk" name="Pipeline.h" compile="0" resource="0" file="Source/engine/Pipeline.h"/>
+      <FILE id="KAsjn9" name="BeepTts.h" compile="0" resource="0" file="Source/tts/BeepTts.h"/>
+      <FILE id="iCD1X5" name="ITts.h" compile="0" resource="0" file="Source/tts/ITts.h"/>
+      <FILE id="cpXQEC" name="ITranslator.h" compile="0" resource="0" file="Source/translate/ITranslator.h"/>
+      <FILE id="KOc3Fe" name="PassThroughTranslator.h" compile="0" resource="0"
+            file="Source/translate/PassThroughTranslator.h"/>
+      <FILE id="XhweJJ" name="Resample16k.h" compile="0" resource="0" file="Source/dsp/Resample16k.h"/>
+      <FILE id="yfxNn3" name="MessageBus.h" compile="0" resource="0" file="Source/engine/MessageBus.h"/>
       <FILE id="B7ceCe" name="WhisperEngine.cpp" compile="1" resource="0"
             file="Source/engine/WhisperEngine.cpp"/>
       <FILE id="V9BJWo" name="WhisperEngine.h" compile="0" resource="0" file="Source/engine/WhisperEngine.h"/>

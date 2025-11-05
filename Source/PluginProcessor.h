@@ -1,64 +1,12 @@
-// #pragma once
-// #include <atomic>
-// #include <JuceHeader.h>
-// #include "whisper.h"
-// #include "WhisperThread.h"
-
-// class PluginAudioProcessor : public juce::AudioProcessor
-// {
-// public:
-//     PluginAudioProcessor();
-//     ~PluginAudioProcessor() override;
-
-//     bool acceptsMidi() const override;
-//     bool producesMidi() const override;
-//     bool isMidiEffect() const override;
-
-//     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
-//     void releaseResources() override;
-//     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-//     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-
-//     juce::AudioProcessorEditor* createEditor() override;
-//     bool hasEditor() const override { return true; }
-//     const juce::String getName() const override { return "LiveTranslator"; }
-    
-//     double getTailLengthSeconds() const override { return 0.0; }
-
-//     // Programs (unused)
-//     int getNumPrograms() override { return 1; }
-//     int getCurrentProgram() override { return 0; }
-//     void setCurrentProgram(int) override {}
-//     const juce::String getProgramName(int) override { return {}; }
-//     void changeProgramName(int, const juce::String&) override {}
-
-//     void getStateInformation(juce::MemoryBlock&) override {}
-//     void setStateInformation(const void*, int) override {}
-
-// private:
-//     // static constexpr int fifoSize = 48000 * 5;
-//     static constexpr int whisperSampleRate = 16000;
-//     static constexpr int fifoSize = 48000 * 10; // 10s safety
-//     juce::AbstractFifo fifo { fifoSize };
-//     std::vector<float> audioFIFO;
-
-//     // resample state
-//     juce::LagrangeInterpolator resampler;
-//     double currentHostSR = 48000.0;
-//     double resampleRatio = 1.0; // host->16k
-//     std::vector<float> resampleBuf; // temp
-
-//     whisper_context* whisperCtx = nullptr;
-//     std::unique_ptr<WhisperThread> whisperThread;
-
-//     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginAudioProcessor)
-//     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-
-// };
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "dsp/LockFreeRingBuffer.h"
 #include "engine/Pipeline.h"
+#include "engine/WhisperEngine.h"
+#include "engine/MessageBus.h"
+#include "tts/BeepTts.h"
+#include "translate/PassThroughTranslator.h"
+#include "dsp/Resample16k.h"
 
 class LiveTranslatorAudioProcessor : public juce::AudioProcessor
 {
@@ -97,6 +45,25 @@ public:
     juce::String getLastTranscript() const { return pipeline ? pipeline->getLastTranscript() : juce::String(); }
 
 private:
+    // Input FIFO -> 16k audio pipeline
+    LockFreeRingBuffer input16k { 16000 * 20, 1 }; // 20s safety
+    Resample16k resampler;
+
+    // Messaging
+    MessageBus bus;
+
+    // Modules
+    PassThroughTranslator translator;
+    BeepTts tts;
+    std::unique_ptr<WhisperEngine> whisper;
+
+    // Scratch buffers
+    juce::AudioBuffer<float> scratch;
+    std::vector<float> monoTmp;
+    std::vector<float> mono16k;
+    std::vector<float> ttsOutMono;
+
+
     std::unique_ptr<Pipeline> pipeline;
 
     LockFreeRingBuffer inFifo  { 48000 * 10, 2 }; // 10s capacity, stereo

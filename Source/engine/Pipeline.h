@@ -8,13 +8,13 @@
 #include "WhisperEngine.h"
 
 // Very simple message passing
-struct TranscriptMsg { juce::String text; juce::String lang; double t = 0.0; };
+// struct TranscriptMsg { juce::String text; juce::String lang; double t = 0.0; };
 struct AudioMsg      { juce::AudioBuffer<float> buffer; };
 
 class Pipeline : private juce::Thread
 {
 public:
-    Pipeline(LockFreeRingBuffer& inputFifo, LockFreeRingBuffer& ttsOutFifo);
+    Pipeline(LockFreeRingBuffer& inputFifo, LockFreeRingBuffer& ttsOutFifo, WhisperEngine& whisperEngine);
     ~Pipeline() override;
 
     void setLanguages(const juce::String& in, const juce::String& out);
@@ -33,7 +33,9 @@ private:
     LockFreeRingBuffer& input;
     LockFreeRingBuffer& ttsOut;
 
-    WhisperEngine whisper;
+    WhisperEngine& whisper;
+    //std::unique_ptr<WhisperEngine> whisper;
+
     std::atomic<bool> running { false };
     std::atomic<double> sampleRate { 48000.0 };
     std::atomic<int> numCh { 2 };
