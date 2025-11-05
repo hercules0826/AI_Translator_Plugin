@@ -1,5 +1,5 @@
 #pragma once
-
+class LiveTranslatorAudioProcessor;
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_dsp/juce_dsp.h>
@@ -8,6 +8,7 @@
 #include "../dsp/LockFreeRingBuffer.h"
 #include "WhisperEngine.h"
 #include "../PluginProcessor.h"
+#include "../tts/AzureTTS.h"
 
 // Very simple message passing
 // struct TranscriptMsg { juce::String text; juce::String lang; double t = 0.0; };
@@ -30,6 +31,8 @@ public:
     juce::String getLastTranscript() const { return lastTranscript; }
 
     void setAutoDetect(bool e);
+    // Non-blocking tick budget (ms)
+    void setTickBudgetMs(int ms) { decodeBudgetMs.store(ms); }
 
 private:
     void run() override; // background loop
@@ -43,10 +46,13 @@ private:
     std::atomic<bool> running { false };
     std::atomic<double> sampleRate { 48000.0 };
     std::atomic<int> numCh { 2 };
+    std::atomic<int>  decodeBudgetMs { 20 }; // per loop
 
     juce::Time startTime { juce::Time::getCurrentTime() };
     juce::String inLang  = "auto";
     juce::String outLang = "en";
+
+    AzureTTS tts;
 
     // state
     LiveTranslatorAudioProcessor& owner;

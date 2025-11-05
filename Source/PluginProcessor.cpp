@@ -27,7 +27,11 @@ void LiveTranslatorAudioProcessor::prepareToPlay (double sr, int)
 
     pipeline = std::make_unique<Pipeline>(inFifo, outFifo, *whisper, *this);
     pipeline->setLanguages("auto", "en");
-    pipeline->start(juce::File("Source/external/whisper.cpp/models/ggml-base.en.bin"));
+    if (juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Source/external/whisper.cpp/models/ggml-base.en.bin").existsAsFile())
+        // pipeline->start(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("models/ggml-base.en.bin"));
+        pipeline->start(juce::File("Source/external/whisper.cpp/models/ggml-base.en.bin"));
+    else
+        appendDebug("Model file not set.\n");
     
 }
 
@@ -103,6 +107,34 @@ void LiveTranslatorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
             }
         }
     }
+}
+
+void LiveTranslatorAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    apvts.state.setProperty("inLang", inLang, nullptr);
+    apvts.state.setProperty("outLang", outLang, nullptr);
+    apvts.state.setProperty("voiceGender", voiceGender, nullptr);
+    apvts.state.setProperty("voiceStyle", voiceStyle, nullptr);
+    apvts.state.setProperty("autoDetect", autoDetect.load(), nullptr);
+
+    juce::MemoryOutputStream mos(destData, false);
+    apvts.state.writeToStream(mos);
+}
+
+void LiveTranslatorAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    auto vt = juce::ValueTree::readFromData(data, (size_t)sizeInBytes);
+    if (! vt.isValid()) return;
+
+    apvts.state = vt;
+
+    inLang      = apvts.state.getProperty("inLang", "auto").toString();
+    outLang     = apvts.state.getProperty("outLang", "en").toString();
+    voiceGender = apvts.state.getProperty("voiceGender", "Female").toString();
+    voiceStyle  = apvts.state.getProperty("voiceStyle", "Conversational").toString();
+    autoDetect.store( (bool) apvts.state.getProperty("autoDetect", true) );
+
+    if (pipeline) pipeline->setLanguages(inLang, outLang);
 }
 
 void LiveTranslatorAudioProcessor::setLanguages(const juce::String& in, const juce::String& out)
