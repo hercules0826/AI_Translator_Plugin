@@ -1,11 +1,16 @@
 #include "Pipeline.h"
 #include <cmath>
 
-Pipeline::Pipeline(LockFreeRingBuffer& in, LockFreeRingBuffer& out, WhisperEngine& we)
-: juce::Thread("Pipeline"), input(in), ttsOut(out), whisper(we)
+Pipeline::Pipeline(LockFreeRingBuffer& in, LockFreeRingBuffer& out, WhisperEngine& we, LiveTranslatorAudioProcessor& o)
+: juce::Thread("Pipeline"), input(in), ttsOut(out), whisper(we), owner(o)
 {
     whisper.setCallback([this](const juce::String& text, const juce::String& lang){
-        lastTranscript = text;
+        // lastTranscript = text;
+        owner.appendDebug("ASR: " + text); // owner = processor reference you pass in
+        {
+            const juce::ScopedLock sl(owner.textMx);
+            owner.lastTranscript = text;
+        }
         logger.logMessage("ASR: " + text);
 
         const auto routed = translate(text, lang, outLang);
@@ -86,3 +91,11 @@ void Pipeline::synthTTS(const juce::String& text, juce::AudioBuffer<float>& out)
         out.setSample(1, n, v);
     }
 }
+
+void Pipeline::setAutoDetect(bool enabled)
+{
+    // For future: if (enabled) whisper.enableAutoLanguage();
+    // else whisper.setLanguage(inLang);
+    (void)enabled;
+}
+

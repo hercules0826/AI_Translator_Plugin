@@ -1,4 +1,5 @@
 #pragma once
+
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_dsp/juce_dsp.h>
@@ -6,6 +7,7 @@
 #include <atomic>
 #include "../dsp/LockFreeRingBuffer.h"
 #include "WhisperEngine.h"
+#include "../PluginProcessor.h"
 
 // Very simple message passing
 // struct TranscriptMsg { juce::String text; juce::String lang; double t = 0.0; };
@@ -14,7 +16,7 @@ struct AudioMsg      { juce::AudioBuffer<float> buffer; };
 class Pipeline : private juce::Thread
 {
 public:
-    Pipeline(LockFreeRingBuffer& inputFifo, LockFreeRingBuffer& ttsOutFifo, WhisperEngine& whisperEngine);
+    Pipeline(LockFreeRingBuffer& inputFifo, LockFreeRingBuffer& ttsOutFifo, WhisperEngine& whisperEngine, LiveTranslatorAudioProcessor& owner);
     ~Pipeline() override;
 
     void setLanguages(const juce::String& in, const juce::String& out);
@@ -26,6 +28,8 @@ public:
 
     // called by editor to fetch last transcript safely
     juce::String getLastTranscript() const { return lastTranscript; }
+
+    void setAutoDetect(bool e);
 
 private:
     void run() override; // background loop
@@ -45,6 +49,7 @@ private:
     juce::String outLang = "en";
 
     // state
+    LiveTranslatorAudioProcessor& owner;
     juce::String lastTranscript;
     juce::FileLogger logger { juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
                               .getChildFile("LiveTranslator.log"), "LiveTranslator" };

@@ -1,12 +1,14 @@
 #pragma once
+class Pipeline;
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "dsp/LockFreeRingBuffer.h"
-#include "engine/Pipeline.h"
 #include "engine/WhisperEngine.h"
 #include "engine/MessageBus.h"
 #include "tts/BeepTts.h"
 #include "translate/PassThroughTranslator.h"
 #include "dsp/Resample16k.h"
+#include <atomic>
+#include <mutex>
 
 class LiveTranslatorAudioProcessor : public juce::AudioProcessor
 {
@@ -40,11 +42,21 @@ public:
     // buses
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 
-    // UI hooks
+    // UI <---> Engine hooks
     void setLanguages(const juce::String& in, const juce::String& out);
-    juce::String getLastTranscript() const { return pipeline ? pipeline->getLastTranscript() : juce::String(); }
+    void setAutoDetect(bool enabled);
+    bool getAutoDetect() const noexcept { return autoDetect.load(); }
+    juce::String getLastTranscript() const; //safe copy
+    void appendDebug(const juce::String& line);
+    juce::String pullDebugSinceLast();      // returns & clears incremental buffer
+    //mutable std::mutex textMx;
+    juce::CriticalSection textMx;
+    juce::String lastTranscript;     // single latest line
+    juce::String pendingDebug;       // accumulated since last UI pull
 
 private:
+    std::atomic<bool> autoDetect { true };
+
     // Input FIFO -> 16k audio pipeline
     LockFreeRingBuffer input16k { 16000 * 20, 1 }; // 20s safety
     Resample16k resampler;
