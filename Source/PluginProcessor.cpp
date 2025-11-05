@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "engine/Pipeline.h"
 
 LiveTranslatorAudioProcessor::LiveTranslatorAudioProcessor()
 : AudioProcessor (BusesProperties()
@@ -24,7 +25,7 @@ void LiveTranslatorAudioProcessor::prepareToPlay (double sr, int)
     
     sampleRateHz = sr;
 
-    pipeline = std::make_unique<Pipeline>(inFifo, outFifo, *whisper);
+    pipeline = std::make_unique<Pipeline>(inFifo, outFifo, *whisper, *this);
     pipeline->setLanguages("auto", "en");
     pipeline->start(juce::File("Source/external/whisper.cpp/models/ggml-base.en.bin"));
     
@@ -107,6 +108,36 @@ void LiveTranslatorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 void LiveTranslatorAudioProcessor::setLanguages(const juce::String& in, const juce::String& out)
 {
     if (pipeline) pipeline->setLanguages(in, out);
+}
+
+void LiveTranslatorAudioProcessor::setAutoDetect(bool enabled)
+{
+    autoDetect.store(enabled);
+    if (pipeline) pipeline->setAutoDetect(enabled); // add stub in Pipeline (no-op ok)
+}
+
+juce::String LiveTranslatorAudioProcessor::getLastTranscript() const
+{
+    //std::scoped_lock lock(textMx);
+    const juce::ScopedLock sl(textMx);
+    return lastTranscript;
+}
+
+void LiveTranslatorAudioProcessor::appendDebug(const juce::String& line)
+{
+    /*std::scoped_lock lock(textMx);
+    pendingDebug << line << "\n";*/
+    const juce::ScopedLock sl(textMx);
+    pendingDebug << line << "\n";
+}
+
+juce::String LiveTranslatorAudioProcessor::pullDebugSinceLast()
+{
+    //std::scoped_lock lock(textMx);
+    const juce::ScopedLock sl(textMx);
+    auto out = pendingDebug;
+    pendingDebug.clear();
+    return out;
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout LiveTranslatorAudioProcessor::createParameterLayout()
