@@ -10,12 +10,25 @@ class Pipeline;
 #include "dsp/Resample16k.h"
 #include <atomic>
 #include <mutex>
+#include "translate/GoogleTranslator.h"
+#include "tts/AzureTTs.h"
 
 class LiveTranslatorAudioProcessor : public juce::AudioProcessor
 {
 public:
     LiveTranslatorAudioProcessor();
     ~LiveTranslatorAudioProcessor() override;
+
+    juce::AudioProcessorValueTreeState apvts;
+
+    GoogleTranslator translator;
+    AzureTTS tts;
+
+    GoogleTranslator& getTranslator() { return translator; }
+    AzureTTS& getAzureTTS() { return tts; }
+
+    void setAzureKey(const juce::String& key) { tts.setKey(key); }
+    void setAzureRegion(const juce::String& reg) { tts.setRegion(reg); }
 
     // JUCE
     void prepareToPlay(double, int) override;
@@ -68,7 +81,7 @@ public:
     juce::String pendingDebug;       // accumulated since last UI pull
 
 private:
-    juce::AudioProcessorValueTreeState apvts { *this, nullptr };
+    
     // Azure config (set these via your own UI if needed)
     juce::String azureKey, azureRegion;
 
@@ -82,8 +95,7 @@ private:
     MessageBus bus;
 
     // Modules
-    PassThroughTranslator translator;
-    BeepTts tts;
+    
     std::unique_ptr<WhisperEngine> whisper;
 
     // Scratch buffers

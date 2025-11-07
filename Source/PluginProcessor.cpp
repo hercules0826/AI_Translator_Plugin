@@ -1,12 +1,26 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "engine/Pipeline.h"
+#include "tts/AzureTTs.h"
 
 LiveTranslatorAudioProcessor::LiveTranslatorAudioProcessor()
-: AudioProcessor (BusesProperties()
-    .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-    .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+    : AudioProcessor(BusesProperties()
+        .withInput("Input", juce::AudioChannelSet::stereo(), true)
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+    apvts(*this, nullptr, "PARAMS", {})
 {
+    // default stored settings
+    apvts.state.setProperty("googleKey", "", nullptr);
+    apvts.state.setProperty("azureKey", "", nullptr);
+    apvts.state.setProperty("azureRegion", "eastus", nullptr);
+
+    translator.setKey(apvts.state.getProperty("googleKey", "").toString());
+    azureKey = apvts.state.getProperty("azureKey", "").toString();
+    azureRegion = apvts.state.getProperty("azureRegion", "eastus").toString();
+
+    tts.setKey(azureKey);
+    tts.setRegion(azureRegion);
+
     WhisperParams p;
     p.modelPath = "Source/external/whisper.cpp/models/ggml-base.en.bin";
     p.dstLang = "en";
@@ -14,6 +28,7 @@ LiveTranslatorAudioProcessor::LiveTranslatorAudioProcessor()
     whisper = std::make_unique<WhisperEngine>(input16k, bus, translator, tts, p);
     whisper->start();
 }
+
 
 LiveTranslatorAudioProcessor::~LiveTranslatorAudioProcessor() {
     if (whisper) whisper->stop();
@@ -111,6 +126,10 @@ void LiveTranslatorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 
 void LiveTranslatorAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
+    apvts.state.setProperty("googleKey",  apvts.state.getProperty("googleKey"), nullptr);
+    apvts.state.setProperty("azureKey",   azureKey, nullptr);
+    apvts.state.setProperty("azureRegion", azureRegion, nullptr);
+
     apvts.state.setProperty("inLang", inLang, nullptr);
     apvts.state.setProperty("outLang", outLang, nullptr);
     apvts.state.setProperty("voiceGender", voiceGender, nullptr);
@@ -123,6 +142,13 @@ void LiveTranslatorAudioProcessor::getStateInformation (juce::MemoryBlock& destD
 
 void LiveTranslatorAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+    azureKey    = apvts.state.getProperty("azureKey", "").toString();
+    azureRegion = apvts.state.getProperty("azureRegion", "").toString();
+    translator.setKey(apvts.state.getProperty("googleKey", "").toString());
+    tts.setKey(azureKey);
+    tts.setRegion(azureRegion);
+
+
     auto vt = juce::ValueTree::readFromData(data, (size_t)sizeInBytes);
     if (! vt.isValid()) return;
 
@@ -172,9 +198,16 @@ juce::String LiveTranslatorAudioProcessor::pullDebugSinceLast()
     return out;
 }
 
-juce::AudioProcessorValueTreeState::ParameterLayout LiveTranslatorAudioProcessor::createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout
+LiveTranslatorAudioProcessor::createParameterLayout()
 {
-    return {};
+    std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+
+    //params.push_back(std::make_unique<juce::AudioParameterString>("googleKey", "Google API Key", ""));
+    //params.push_back(std::make_unique<juce::AudioParameterString>("azureKey",  "Azure API Key", ""));
+    //params.push_back(std::make_unique<juce::AudioParameterString>("azureRegion", "Azure Region", "eastus"));
+
+    return { params.begin(), params.end() };
 }
 
 juce::AudioProcessorEditor* LiveTranslatorAudioProcessor::createEditor() 

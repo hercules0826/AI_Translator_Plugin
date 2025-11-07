@@ -89,38 +89,35 @@ juce::String Pipeline::translate(const juce::String& txt, const juce::String& in
     // TODO: replace with DeepL/Google or offline MarianMT/NLLB
     if (in == out) return {}; // obey “silence if same language”
     // TODO: integrate actual translator (DeepL / Azure Translator / Marian/NLLB)
-    return txt; // pass-through for now (so we can test TTS chain)
+    TranslateRequest req;
+    req.text = txt.toStdString();
+    req.srcLang = in.toStdString();
+    req.dstLang = out.toStdString();
+
+    auto result = translator.translate(req);
+    owner.appendDebug("Translate: " + txt + " -> " + result);
+    return juce::String(result);
+
 }
 
 void Pipeline::synthTTS(const juce::String& text, juce::AudioBuffer<float>& out)
 {
-    // // Placeholder: short beep “speaks” per character count
-    // const double sr = sampleRate.load();
-    // const int len   = juce::jlimit(4800, 48000, text.length() * 1200);
-    // out.setSize(2, len);
-    // for (int n=0; n<len; ++n)
-    // {
-    //     float v = 0.1f * std::sin(2.0 * juce::MathConstants<double>::pi * (220.0 + (text.length()%5)*30) * n / sr);
-    //     out.setSample(0, n, v);
-    //     out.setSample(1, n, v);
-    // }
-    //------------------------------------------------------------------------------------------------------------ 
-    // if (!azureTTS)
-    //     azureTTS = std::make_unique<AzureTTS>("YOUR_KEY", "YOUR_REGION");
-
-    // if (!azureTTS->synth(text, outLang, out))
-    // {
-    //     // fallback beep if Azure fails
-    //     out.setSize(1, 16000);
-    //     for (int i = 0; i < 16000; i++)
-    //         out.setSample(0, i, 0.1f * std::sin(2.0 * juce::MathConstants<double>::pi * 440 * i / 16000.0));
-    // }
-    //-------------------------------------------------------------------------------------------------------------
     auto outCode = outLang.toLowerCase();
-    if (outCode == "gsw") outCode = "de"; // route GSW → DE voice bank
+    if (outCode == "gsw") outCode = "de";
 
-    const auto voice = tts.pickVoice(outCode, owner.getVoiceGender(), owner.getVoiceStyle());
-    out = tts.synthesizeStreaming(text, voice, sampleRate.load());
+    auto voice = tts.pickVoice(outCode,
+                            owner.getVoiceGender(),
+                            owner.getVoiceStyle());
+
+    std::vector<float> pcm;
+    TtsRequest req;
+    req.text = text.toStdString();
+
+    tts.synthesize(req,
+        [this](const std::vector<float>& pcm, bool eof)
+        {
+            whisper.getBus().pushTts(TtsPcmMsg{ pcm, eof });
+        });
 }
 
 void Pipeline::setAutoDetect(bool enabled)

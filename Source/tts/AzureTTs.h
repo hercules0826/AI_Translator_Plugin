@@ -1,41 +1,34 @@
 #pragma once
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
+#include "ITts.h"
 
 struct AzureVoiceProfile
 {
-    juce::String name;   // e.g., "en-US-JennyNeural"
-    juce::String style;  // Conversational / Broadcast / Elegant / Warm / ...
-    juce::String role;   // (optional) "Girl" / "Boy" etc. – not used here
+    juce::String name;   // "en-US-JennyNeural"
+    juce::String style;  // "Conversational"
+    juce::String role;   // Optional character role
 };
 
-struct AzureVoiceSet
-{
-    AzureVoiceProfile male;
-    AzureVoiceProfile female;
-    AzureVoiceProfile neutral;
-};
-
-class AzureTTS
+class AzureTTS  :   public ITts
 {
 public:
-    void setKey(const juce::String& key) { azureKey = key; }
-    void setRegion(const juce::String& regionId) { region = regionId; }
+    AzureTTS() = default;
 
-    // language: "en", "de", "gsw"(->de), "fr", "it"
-    AzureVoiceProfile pickVoice(const juce::String& language,
+    void setKey(const juce::String& key)      { azureKey = key; }
+    void setRegion(const juce::String& region){ azureRegion = region; }
+
+    AzureVoiceProfile pickVoice(const juce::String& lang,
                                 const juce::String& gender,
                                 const juce::String& style) const;
 
-    // Stub “streaming” synth for now (tone). Replace with real Azure SDK calls.
-    juce::AudioBuffer<float> synthesizeStreaming(const juce::String& text,
-                                                 const AzureVoiceProfile& profile,
-                                                 double sampleRate = 48000.0) const;
+    // STREAMING callback:
+    void synthesize(const TtsRequest& req,
+        std::function<void(const std::vector<float>&, bool)> onChunk) override;
 
 private:
-    juce::String azureKey, region;
+    juce::String azureKey, azureRegion;
 
-    // Default voice map. Swap with your preferred SKUs.
-    // NOTE: gsw (Swiss German) is routed to de internally.
-    AzureVoiceSet forLang(const juce::String& lang) const;
+    juce::String buildSsml(const juce::String& text,
+                           const AzureVoiceProfile& voice) const;
 };
