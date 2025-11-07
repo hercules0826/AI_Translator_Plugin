@@ -52,6 +52,7 @@ public:
 
     // Called on worker thread periodically
     void process(int maxMsPerTick = 50);
+    MessageBus& getBus() { return bus; }
 
     void reset();
 

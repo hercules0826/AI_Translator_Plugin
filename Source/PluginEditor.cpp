@@ -19,6 +19,36 @@ LiveTranslatorAudioProcessorEditor::LiveTranslatorAudioProcessorEditor (LiveTran
     setResizable(true, true);
     setSize(740, 460);
 
+    // Google Key
+    addAndMakeVisible(googleKeyLabel);
+    googleKeyLabel.setJustificationType(juce::Justification::centredLeft);
+
+    addAndMakeVisible(googleKeyField);
+    googleKeyField.setText(proc.apvts.state.getProperty("googleKey").toString());
+    googleKeyField.onTextChange = [this]
+    {
+        proc.apvts.state.setProperty("googleKey", googleKeyField.getText(), nullptr);
+        proc.getTranslator().setKey(googleKeyField.getText());
+    };
+
+    // Azure Key
+    addAndMakeVisible(azureKeyLabel);
+    addAndMakeVisible(azureKeyField);
+    azureKeyField.setText(proc.getAzureKey());
+    azureKeyField.onTextChange = [this]
+    {
+        proc.setAzureKey(azureKeyField.getText());
+    };
+
+    // Azure Region
+    addAndMakeVisible(azureRegionLabel);
+    addAndMakeVisible(azureRegionField);
+    azureRegionField.setText(proc.getAzureRegion());
+    azureRegionField.onTextChange = [this]
+    {
+        proc.setAzureRegion(azureRegionField.getText());
+    };
+
     // Language selectors
     addAndMakeVisible(inLang);
     addAndMakeVisible(outLang);
@@ -138,6 +168,20 @@ void LiveTranslatorAudioProcessorEditor::resized()
     styleBox.setBounds(voiceRow.removeFromLeft(160).reduced(0, 2));
     voiceRow.removeFromLeft(8);
     preview.setBounds(voiceRow.removeFromLeft(120));
+
+    auto bottom = r.removeFromBottom(120);
+    auto row1 = bottom.removeFromTop(30);
+    googleKeyLabel.setBounds(row1.removeFromLeft(140));
+    googleKeyField.setBounds(row1);
+
+    auto row2 = bottom.removeFromTop(30);
+    azureKeyLabel.setBounds(row2.removeFromLeft(140));
+    azureKeyField.setBounds(row2);
+
+    auto row3 = bottom.removeFromTop(30);
+    azureRegionLabel.setBounds(row3.removeFromLeft(140));
+    azureRegionField.setBounds(row3);
+
 
     r.removeFromTop(6);
     showDebug.setBounds(r.removeFromTop(24));

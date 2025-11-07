@@ -28,6 +28,16 @@ private:
     juce::ToggleButton showDebug{ "Show debug panel" };
     juce::TextEditor debug;
 
+    juce::Label googleKeyLabel { {}, "Google API Key:" };
+    juce::TextEditor googleKeyField;
+
+    juce::Label azureKeyLabel  { {}, "Azure Key:" };
+    juce::TextEditor azureKeyField;
+
+    juce::Label azureRegionLabel { {}, "Azure Region:" };
+    juce::TextEditor azureRegionField;
+
+
     void timerCallback() override;
     void updateLanguagesFromUI();
     void buildLangBoxes();

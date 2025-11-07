@@ -9,6 +9,7 @@ class LiveTranslatorAudioProcessor;
 #include "WhisperEngine.h"
 #include "../PluginProcessor.h"
 #include "../tts/AzureTTS.h"
+#include "../translate//GoogleTranslator.h"
 
 // Very simple message passing
 // struct TranscriptMsg { juce::String text; juce::String lang; double t = 0.0; };
@@ -52,6 +53,7 @@ private:
     juce::String inLang  = "auto";
     juce::String outLang = "en";
 
+	GoogleTranslator translator;
     AzureTTS tts;
 
     // state
